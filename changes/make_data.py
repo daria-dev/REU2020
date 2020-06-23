@@ -108,7 +108,7 @@ def central_diff(t,y):
 	else:
 		dt = (args.Tend - args.T0)/len(y[0,:])
 		end = y.shape[1]
-		v = np.zeros(y.shape-1)
+		v = np.zeros((y.shape[0],y.shape[1]-2,y.shape[2]))
 		v[:,:,:] = (y[:,2:end,:]-y[:,0:end-2,:])/(2*dt)
 	return v
 
@@ -180,7 +180,7 @@ def generate_data(t,y0,func,func_name,data_type,num_traj):
 	data_y = np.stack(data_y, axis=0)
 	#data_v = func(t=None,y=data_y) # exact velocity calculated
 	#data_v = fwd_euler(t=None,y=data_y) # velocity calculated using forward euler
-	data_v = fwd_euler(t=None,y=data_y) #velocity calculated using central difference
+	data_v = central_diff(t=None,y=data_y) #velocity calculated using central difference
 
 	if data_y.shape[2] == 3 :
 		plot_3D(data_y,func_name,args.data_dir,data_type) # visualize solution
