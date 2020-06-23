@@ -13,7 +13,7 @@ from model_aux import *
 parser = argparse.ArgumentParser('MODEL')
 parser.add_argument('--hidden_dim', type=int, default=30,
 	help='number of units per hidden layer')
-parser.add_argument('--nn_depth', type=int, default=5,
+parser.add_argument('--nn_depth', type=int, default=1,
     help='number of hidden layers')
 parser.add_argument('--batch_size', type=int, default=4,
 	help='number of')
@@ -34,6 +34,7 @@ class MLP(nn.Module):
         h_last = last layer of network
         h_i (1 <= i <= last-1) can refer to the ith hidden layer
     '''
+
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(MLP, self).__init__()
         self.hidden = nn.ModuleList()
@@ -49,11 +50,12 @@ class MLP(nn.Module):
 
     def forward(self, x0):
         length = len(self.hidden)
-        for i in range(length - 1):
+        for i in range(length):
             layer = self.hidden[i]
-            x0 = self.sigmoid(layer(x0))
-		x0 = self.hidden[-1](x0)
-
+            if i == length - 1:
+            	x0 = layer(x0)
+            else:
+                x0 = self.sigmoid(layer(x0))
         return x0
 
 if __name__ == "__main__":
