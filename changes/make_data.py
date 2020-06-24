@@ -182,6 +182,12 @@ def generate_data(t,y0,func,func_name,data_type,num_traj):
     #data_v = fwd_euler(t=None,y=data_y) # velocity calculated using forward euler
     data_v = central_diff(t=None,y=data_y) #velocity calculated using central difference
 
+    # uncomment this part if using fwd_euler or central_diff
+    if len(data_y.shape) == 1:
+        data_y = data_y[1:-1]
+    else:
+        data_y = data_y[:, 1:-1, :]
+
     if data_y.shape[2] == 3 :
         plot_3D(data_y,func_name,args.data_dir,data_type) # visualize solution
 
