@@ -21,6 +21,10 @@ parser.add_argument('--num_epoch', type=int, default=5000,
 	help='number of training epochs')
 parser.add_argument('--lr', type=float, default=0.01,
 	help='learning rate')
+parses.add_argument('--Reg', type=str, default='none',
+	help='reguarization argument')
+parses.add_argument('--Lambda', type=float, default=0.01,
+	help='reguarization weight')
 parser.add_argument('--data_dir', type=str, default='data',
 	help='name for data directory')
 parser.add_argument('--log_dir', type=str, default='results',

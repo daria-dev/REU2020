@@ -108,7 +108,7 @@ def central_diff(t,y):
 	else:
 		dt = (args.Tend - args.T0)/len(y[0,:])
 		end = y.shape[1]
-		v = np.zeros(y.shape-1)
+		v = np.zeros((y.shape[0],y.shape[1]-2,y.shape[2]))
 		v[:,:,:] = (y[:,2:end,:]-y[:,0:end-2,:])/(2*dt)
 	return v
 
