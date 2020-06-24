@@ -2,11 +2,8 @@
 # Date: 06/17/20
 # Email: kbolling@andrew.cmu.edu
 
-import os, time, argparse, json
-import numpy as np
-import torch
+import argparse, json
 import torch.nn as nn
-import torch.utils.data
 
 from model_aux import *
 
@@ -39,13 +36,13 @@ class MLP(nn.Module):
         h_i (1 <= i <= last-1) can refer to the ith hidden layer
     '''
 
-    def __init__(self, input_dim, hidden_dim, output_dim):
+    def __init__(self, input_dim, hidden_dim, output_dim, nn_depth):
         super(MLP, self).__init__()
         self.hidden = nn.ModuleList()
 
         self.hidden.append(nn.Linear(input_dim, hidden_dim))
 
-        for i in range(args.nn_depth - 1):
+        for i in range(nn_depth - 1):
             self.hidden.append(nn.Linear(hidden_dim, hidden_dim))
 
         self.hidden.append(nn.Linear(hidden_dim, output_dim))
@@ -80,7 +77,7 @@ if __name__ == "__main__":
 
     ''' Define NET structure. '''
     dim = train_y.shape[2] # dimension of data
-    net = MLP(input_dim=dim, hidden_dim=args.hidden_dim, output_dim=dim)
+    net = MLP(input_dim=dim, hidden_dim=args.hidden_dim, output_dim=dim, nn_depth=args.nn_depth)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
     criterion = nn.MSELoss(reduction='mean')
 
