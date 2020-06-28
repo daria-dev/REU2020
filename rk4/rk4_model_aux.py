@@ -1,6 +1,8 @@
 from __future__ import print_function
 import os, time, torch
 import matplotlib.pyplot as plt
+import numpy as np
+from scipy.integrate import solve_ivp
 
 def make_directory(dir_name):
     '''
@@ -43,7 +45,7 @@ def plot_3D(data,func_name,dir_name,data_type):
     tot_num_traj = data.shape[0]
     fig = plt.figure()
     for traj in range(tot_num_traj):
-        ax = fig.gca( projection='3d')
+        ax = fig.gca(projection='3d')
         ax.plot(data[traj,:,0],data[traj,:,1],data[traj,:,2], lw=0.5)
         ax.view_init(elev=26,azim=-133)
     ax.set_xlabel('y_1')
@@ -142,7 +144,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                         l1 = torch.tensor(0.0)
                         Lambda = torch.tensor(args.Lambda)
                         for w in net.parameters():
-                                l1 += w.abs()
+                                l1 += w.norm(1)
                         loss += l1*Lambda
 
                 loss.backward()
@@ -159,3 +161,68 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     print('\n=====> Running time: {}'.format(end-start))
 
     torch.save(net.state_dict(),args.log_dir+'/net_state_dict.pt')
+
+# redefining some function from make_data to avoid command line arg problems
+# maybe make a new class for this?
+def initial(y0):
+    assert (len(y0.shape) == 1),'y0 must be a 1D array.'
+
+    return np.array(y0)+np.random.uniform(low=-2, high=2, size=(len(y0),))
+
+def solve_ODE(t,y0,func):
+
+    assert (len(y0.shape) == 1),'y0 must be a 1D array.'
+    sol = solve_ivp(fun=func, t_span=[0, 5],
+        y0=initial(y0), method='RK45', t_eval=t,
+        dense_output=False, vectorized=False,
+        rtol=1e-9, atol=1e-9*np.ones((len(y0),)))
+
+    return np.transpose(sol.y)
+
+def spiral(t, y):
+    assert ((len(y.shape) == 1) or (len(y.shape) == 3)),'y must be a 1D or 3D array.'
+
+
+    # Original
+    if len(y.shape) == 1:
+        v = np.array([y[1]**3, -( (y[0]+y[2])/2)**3 -0.2*y[1], y[2]/10.])
+    else:
+        v = np.zeros(y.shape)
+        v[:,:,0] = y[:,:,1]**3
+        v[:,:,1] = -((y[:,:,0]+y[:,:,2])/2.)**3 - 0.2*y[:,:,1]
+        v[:,:,2] = y[:,:,2]/10.
+    return v
+
+
+# generate test trajectories with exact velocity
+def generate_test_traj(t,y0,func):
+    data_y = []
+    for _ in range(5):
+        y = solve_ODE(t,y0,func)
+        data_y.append(y)
+    data_y = np.stack(data_y, axis=0)
+    data_v = func(t=None,y=data_y) # exact velocity calculated
+
+    return (data_v, data_y)
+
+# compute test loss for net using criterion and randomly generated trajectories
+def test_loss (net, criterion):
+    t = np.linspace(start=0, stop=5, num=100) # define grid on which to solve ODE
+    y0 = np.array([4, 3, -2]) # define center of neighborhood for initial starting points
+
+
+    v = []
+    y = []
+    y0_l = [initial(y0) for _ in range(5)]
+    loss = 0
+
+    for y0 in y0_l:
+        v, y = generate_test_traj(t, y0, spiral)
+        v_hat = net(torch.from_numpy(y).float())
+        loss += criterion(v_hat, torch.from_numpy(v).float())
+    
+    loss /= 5
+
+    return loss.item()
+
+
