@@ -1,14 +1,11 @@
-# Code by: Kayla Bollinger
-# Date: 06/17/20
-# Email: kbolling@andrew.cmu.edu
-
 import argparse, json
 import torch.nn as nn
+import numpy as np
 
-from model_aux import *
+from rk4_model_aux import *
 
 parser = argparse.ArgumentParser('MODEL')
-parser.add_argument('--hidden_dim', type=int, default=30,
+parser.add_argument('--hidden_dim', type=int, default=32,
     help='number of units per hidden layer')
 parser.add_argument('--nn_depth', type=int, default=1,
     help='number of hidden layers')
@@ -17,23 +14,17 @@ parser.add_argument('--batch_size', type=int, default=4,
 parser.add_argument('--num_epoch', type=int, default=5000,
     help='number of training epochs')
 parser.add_argument('--lr', type=float, default=0.01,
-<<<<<<< HEAD
-	help='learning rate')
-parser.add_argument('--Reg', type=str, default='none',
-	help='reguarization argument')
-parser.add_argument('--Lambda', type=float, default=0.01,
-	help='reguarization weight')
-=======
     help='learning rate')
 parser.add_argument('--Reg', type=str, default='none',
     help='reguarization argument')
 parser.add_argument('--Lambda', type=float, default=0.01,
     help='reguarization weight')
->>>>>>> 00b938b7210c9f3893a195709401356a7d48d486
 parser.add_argument('--data_dir', type=str, default='data',
     help='name for data directory')
 parser.add_argument('--log_dir', type=str, default='results',
     help='name for directory in which to save results')
+parser.add_argument('--dt', type=float, default=0.00998,
+    help='time step for RK4')  # this seems to be the default value that make_data is using, might change
 args = parser.parse_args()
 
 class MLP(nn.Module):
@@ -54,7 +45,7 @@ class MLP(nn.Module):
             self.hidden.append(nn.Linear(hidden_dim, hidden_dim))
 
         self.hidden.append(nn.Linear(hidden_dim, output_dim))
-        self.sigmoid = nn.LeakyReLU()
+        self.sigmoid = nn.ReLU()
         return
 
     def forward(self, x0):
@@ -67,6 +58,21 @@ class MLP(nn.Module):
                 x0 = self.sigmoid(layer(x0))
         return x0
 
+class RK4(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim, nn_depth, dt):
+        super(RK4, self).__init__()
+        self.f = MLP(input_dim, hidden_dim, output_dim, nn_depth)
+        self.dt = dt
+        return
+
+    def forward(self, x0):
+        x1 = self.dt * self.f(x0)
+        x2 = self.dt * self.f(x0 + x1/2.)
+        x3 = self.dt * self.f(x0 + x2/2.)
+        x4 = self.dt * self.f(x0 + x3)
+        out = x0 + x1/6. + x2/3. + x3/3. + x4/6.
+        return out
+
 if __name__ == "__main__":
     ''' Make directory to save results. '''
     make_directory(args.log_dir)
@@ -77,35 +83,16 @@ if __name__ == "__main__":
 
     #'''Load data.'''
     train_y = np.load(args.data_dir+'/train_y.npy')
-    train_v = np.load(args.data_dir+'/train_v.npy')
     val_y = np.load(args.data_dir+'/val_y.npy')
-    val_v = np.load(args.data_dir+'/val_v.npy')
     test_y = np.load(args.data_dir+'/test_y.npy')
-    test_v = np.load(args.data_dir+'/test_v.npy')
 
     ''' Define NET structure. '''
     dim = train_y.shape[2] # dimension of data
-    net = MLP(input_dim=dim, hidden_dim=args.hidden_dim, output_dim=dim, nn_depth=args.nn_depth)
+    net = RK4(input_dim=dim, hidden_dim=args.hidden_dim, output_dim=dim, nn_depth=args.nn_depth, dt=args.dt)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
     criterion = nn.MSELoss(reduction='mean')
 
-<<<<<<< HEAD
-	''' Train model. '''
-	# toggle comment of next two lines to either train network, or run tests with code on already trained network
-	train_nn(train_y,train_v,val_y,val_v,net,criterion,optimizer,args)
-	net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
-
-	def test_loss (y_test, v_test):
-		v_hat = net.forward(torch.from_numpy(y_test).float())
-		v = torch.from_numpy(v_test).float()
-		testloss = criterion(v_hat, v)
-
-		print ("Test loss: ", testloss.item())
-
-	test_loss(test_y, test_v)
-=======
     ''' Train model. '''
     # toggle comment of next two lines to either train network, or run tests with code on already trained network
-    train_nn(train_y,train_v,val_y,val_v,net,criterion,optimizer,args)
+    train_nn(train_y,val_y,net,criterion,optimizer,args)
     # net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
->>>>>>> 00b938b7210c9f3893a195709401356a7d48d486
