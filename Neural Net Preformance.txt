@@ -1,0 +1,44 @@
+Neural Net Preformance
+
+Data: 502 data points (500 really), 15 trajectories,
+      velocity computed by forward euler
+
+Activation: LeakyRelu
+
+(# nodes, # layers)
+(32, 1)
+    - 5000 epochs, lr 0.01, L2 Reg, Lambda 0.01
+    - test accuracy: 3.245775
+(64, 1)
+    - 5000 epochs, lr 0.01, L2 Reg, Lambda 0.01
+    - test accuracy: 7.55934
+(128, 1)
+    - 5000 epochs, lr 0.01, L2 Reg, Lambda 0.01
+    - test accuracy: 3.38333
+(256, 1)
+    - 5500 epochs, lr 0.001, L2 Reg, Lambda 0.001
+    - test accuracy: 2.9119
+(32, 2)
+    - 6000 epochs, lr 0.01, L2 Reg, Lambda 0.01
+    - test accuracy: 5.51886
+(64, 2)
+    - 7000 epochs, lr 0.001, L2 Reg, Lambda 0.001
+    - test accuracy: 6.4582
+(128, 2)
+    - 7000 epochs, lr 0.001, L2 Reg, Lambda 0.001
+    - test accuracy: 4.846
+(256, 2)
+    - 7000 epochs, lr 0.001, L2 Reg, Lambda 0.001
+    - test accuracy: 3.1294
+(32, 4)
+    - 8000 epochs, lr 0.001, L2 Reg, Lambda 0.001
+    - test accuracy: 6.8563
+(64, 4)
+    - 7500 epochs, lr 0.001, L2 Reg, Lambda 0.001
+    - test accuracy: 6.7199
+(128, 4)
+    - 8500 epochs, lr 0.001, L2 Reg, Lambda 0.001
+    - test accuracy: 3.10682
+(256, 4)
+    - 7000 epochs, lr 0.001, L2 Reg, Lambda 0.001
+    - test accuracy: 2.7589

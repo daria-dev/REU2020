@@ -21,9 +21,9 @@ parser.add_argument('--num_epoch', type=int, default=5000,
 	help='number of training epochs')
 parser.add_argument('--lr', type=float, default=0.01,
 	help='learning rate')
-parses.add_argument('--Reg', type=str, default='none',
+parser.add_argument('--Reg', type=str, default='none',
 	help='reguarization argument')
-parses.add_argument('--Lambda', type=float, default=0.01,
+parser.add_argument('--Lambda', type=float, default=0.01,
 	help='reguarization weight')
 parser.add_argument('--data_dir', type=str, default='data',
 	help='name for data directory')
@@ -49,7 +49,7 @@ class MLP(nn.Module):
             self.hidden.append(nn.Linear(hidden_dim, hidden_dim))
 
         self.hidden.append(nn.Linear(hidden_dim, output_dim))
-        self.sigmoid = nn.ReLU()
+        self.sigmoid = nn.LeakyReLU()
         return
 
     def forward(self, x0):
@@ -87,4 +87,13 @@ if __name__ == "__main__":
 	''' Train model. '''
 	# toggle comment of next two lines to either train network, or run tests with code on already trained network
 	train_nn(train_y,train_v,val_y,val_v,net,criterion,optimizer,args)
-	# net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
+	net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
+
+	def test_loss (y_test, v_test):
+		v_hat = net.forward(torch.from_numpy(y_test).float())
+		v = torch.from_numpy(v_test).float()
+		testloss = criterion(v_hat, v)
+
+		print ("Test loss: ", testloss.item())
+
+	test_loss(test_y, test_v)

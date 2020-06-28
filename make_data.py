@@ -86,6 +86,7 @@ def solve_ODE(t,y0,func):
 
 	return np.transpose(sol.y)
 
+
 def generate_data(t,y0,func,func_name,data_type,num_traj):
 	'''
 	NOTES: Generates multiple data trajectories (number specified by num_traj) starting near y0. 

@@ -179,14 +179,14 @@ def generate_data(t,y0,func,func_name,data_type,num_traj):
 		data_y.append(y)
 	data_y = np.stack(data_y, axis=0)
 	#data_v = func(t=None,y=data_y) # exact velocity calculated
-	#data_v = fwd_euler(t=None,y=data_y) # velocity calculated using forward euler
-	data_v = central_diff(t=None,y=data_y) #velocity calculated using central difference
+	data_v = fwd_euler(t=None,y=data_y) # velocity calculated using forward euler
+	#data_v = central_diff(t=None,y=data_y) #velocity calculated using central difference
 
 	if data_y.shape[2] == 3 :
 		plot_3D(data_y,func_name,args.data_dir,data_type) # visualize solution
 
 	# save data
-	np.save(args.data_dir+'/'+data_type+'_y', data_y)
+	np.save(args.data_dir+'/'+data_type+'_y', data_y[:,1:-1])
 	np.save(args.data_dir+'/'+data_type+'_v', data_v)
 
 if __name__ == "__main__":

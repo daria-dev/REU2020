@@ -1,0 +1,11 @@
+{
+  "hidden_dim": 256,
+  "nn_depth": 1,
+  "batch_size": 4,
+  "num_epoch": 5500,
+  "lr": 0.001,
+  "Reg": "L2",
+  "Lambda": 0.001,
+  "data_dir": "data",
+  "log_dir": "results"
+}
