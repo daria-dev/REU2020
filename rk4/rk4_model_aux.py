@@ -111,10 +111,10 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
 
     # convert data to torch tensor
     # uses y to predict y at next time step instead of predicting v
-    train_y_tensor = torch.from_numpy(train_y[:-1]).float()
-    train_y1_tensor = torch.from_numpy(train_y[1:]).float()
-    val_y_tensor = torch.from_numpy(val_y[:-1]).float()
-    val_y1_tensor = torch.from_numpy(val_y[1:]).float()
+    train_y_tensor = torch.from_numpy(train_y[:,:-1]).float()
+    train_y1_tensor = torch.from_numpy(train_y[:,1:]).float()
+    val_y_tensor = torch.from_numpy(val_y[:,:-1]).float()
+    val_y1_tensor = torch.from_numpy(val_y[:,1:]).float()
 
     # create batches for training data
     train_dataset = torch.utils.data.TensorDataset(train_y_tensor, train_y1_tensor)
@@ -159,3 +159,4 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     print('\n=====> Running time: {}'.format(end-start))
 
     torch.save(net.state_dict(),args.log_dir+'/net_state_dict.pt')
+
