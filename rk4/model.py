@@ -2,7 +2,7 @@ import argparse, json
 import torch.nn as nn
 import numpy as np
 
-from rk4_model_aux import *
+from model_aux import *
 
 parser = argparse.ArgumentParser('MODEL')
 parser.add_argument('--hidden_dim', type=int, default=32,
