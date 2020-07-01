@@ -53,7 +53,7 @@ def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
 	else:
 		print(line)
 
-def plot_3D(data,func_name,dir_name,data_type):
+def plot_3D(data,func_name,dir_name):
 	'''
 	NOTES: Plots 3D data and saves plot as png.
 
@@ -73,7 +73,6 @@ def plot_3D(data,func_name,dir_name,data_type):
 	assert (data.shape[2] == 3),'data must be 3D.'
 	assert (type(func_name) == str),'func_name must be string.'
 	assert (type(dir_name) == str),'dir_name must be string.'
-	assert (type(data_type) == str),'data_type must be string.'
 
 	plt.close()
 	tot_num_traj = data.shape[0]
@@ -85,9 +84,9 @@ def plot_3D(data,func_name,dir_name,data_type):
 	ax.set_xlabel('y_1')
 	ax.set_ylabel('y_2')
 	ax.set_zlabel('y_3')
-	ax.set_title(func_name+': '+data_type+' data')
+	ax.set_title(func_name+': data')
 	# plt.savefig(args.data_dir+'/spiral_'+('train' if train else 'test')+'_data.svg')
-	plt.savefig(dir_name+'/'+func_name+'_'+data_type+'_data.png')
+	plt.savefig(dir_name+'/'+func_name+'_data.png')
 	plt.show()
 	plt.close()
 

@@ -12,7 +12,7 @@ parser.add_argument('--Delta', type=float, default=2,
     help='radius of neighborhood around initial point y0')
 parser.add_argument('--num_point', type=int, default=502,
     help='number of points per trajectory')
-parser.add_argument('--num_traj', type=int, default=50,
+parser.add_argument('--num_traj', type=int, default=100,
     help='number of training trajectories')
 parser.add_argument('--data_dir', type=str, default='data',
         help='name for data directory')
@@ -83,7 +83,7 @@ def solve_ODE(t,y0,func):
     return np.transpose(sol.y)
 
 
-def generate_data(t,y0,func,func_name,data_type,num_traj):
+def generate_data(t,y0,func,func_name,num_traj):
     '''
     NOTES: Generates multiple data trajectories (number specified by num_traj) starting near y0.
             Saves this data as 3D array with axes
@@ -96,7 +96,6 @@ def generate_data(t,y0,func,func_name,data_type,num_traj):
         y0 = initial position data
         func = function defining ODE used to generate data
         func_name = string with name of ODE
-        data_type = string with label for data (e.g. training, validation, testing)
         num_traj = number of trajectories to generate
 
     OUTPUT:
@@ -106,7 +105,6 @@ def generate_data(t,y0,func,func_name,data_type,num_traj):
     assert ((args.T0 <= min(t)) & (max(t) <= args.Tend)),'t must be subset of [T0,Tend].'
     assert (len(y0.shape) == 1),'y0 must be 1D array.'
     assert (type(func_name) == str),'func_name must be string.'
-    assert (type(data_type) == str),'data_type must be string.'
     assert (type(num_traj) == int),'num_traj must be integer.'
 
     data_y = []
@@ -116,10 +114,10 @@ def generate_data(t,y0,func,func_name,data_type,num_traj):
     data_y = np.stack(data_y, axis=0)
 
     if data_y.shape[2] == 3 :
-        plot_3D(data_y,func_name,args.data_dir,data_type) # visualize solution
+        plot_3D(data_y,func_name,args.data_dir) # visualize solution
 
     # save data
-    np.save(args.data_dir+'/'+data_type+'_y', data_y)
+    np.save(args.data_dir+'/data_y', data_y)
 
 if __name__ == "__main__":
     ''' Make directory to store data. '''
@@ -137,6 +135,4 @@ if __name__ == "__main__":
     np.save(args.data_dir+'/ipcenter',y0) # save center
 
     ''' Generate data. '''
-    generate_data(t=t,y0=y0,func=spiral,func_name='Spiral',data_type='train',num_traj=args.num_traj)
-    generate_data(t=t,y0=y0,func=spiral,func_name='Spiral',data_type='val',num_traj=int(args.num_traj*0.2))
-    generate_data(t=t,y0=y0,func=spiral,func_name='Spiral',data_type='test',num_traj=int(args.num_traj*0.2))
+    generate_data(t=t,y0=y0,func=spiral,func_name='Spiral',num_traj=args.num_traj)
