@@ -1,5 +1,5 @@
 import argparse, json
-from rk4_model_aux import make_directory, plot_3D
+from model_aux import make_directory, plot_3D
 import numpy as np
 from scipy.integrate import solve_ivp
 
