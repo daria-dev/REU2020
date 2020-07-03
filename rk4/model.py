@@ -3,15 +3,16 @@ import torch.nn as nn
 import numpy as np
 
 from model_aux import *
+from test_aux import test_loss
 
 parser = argparse.ArgumentParser('MODEL')
 parser.add_argument('--hidden_dim', type=int, default=32,
     help='number of units per hidden layer')
 parser.add_argument('--nn_depth', type=int, default=1,
     help='number of hidden layers')
-parser.add_argument('--batch_size', type=int, default=4,
+parser.add_argument('--batch_size', type=int, default=32,
     help='number of')
-parser.add_argument('--num_epoch', type=int, default=5000,
+parser.add_argument('--num_epoch', type=int, default=1000,
     help='number of training epochs')
 parser.add_argument('--lr', type=float, default=0.01,
     help='learning rate')
@@ -24,7 +25,7 @@ parser.add_argument('--data_dir', type=str, default='data',
 parser.add_argument('--log_dir', type=str, default='results',
     help='name for directory in which to save results')
 parser.add_argument('--dt', type=float, default=0.00998,
-    help='time step for RK4')  # this seems to be the default value that make_data is using, might change
+    help='time step for RK4')
 args = parser.parse_args()
 
 class MLP(nn.Module):
@@ -81,6 +82,8 @@ if __name__ == "__main__":
     with open(args.log_dir+'/args.txt', 'w') as f:
         json.dump(args.__dict__, f, indent=2)
 
+    print('\nNote that dt should be calculated using (Tend-T0)/num_point. \nChange value manually if necessary. \n')
+
     #'''Load data.'''
     train_y = np.load(args.data_dir+'/train_y.npy')
     val_y = np.load(args.data_dir+'/val_y.npy')
@@ -96,3 +99,8 @@ if __name__ == "__main__":
     # toggle comment of next two lines to either train network, or run tests with code on already trained network
     train_nn(train_y,val_y,net,criterion,optimizer,args)
     # net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
+
+    def crit(y, y_):
+        return np.mean((y - y_) ** 2)
+
+    print('test loss:', test_loss(net, crit, test_y))
