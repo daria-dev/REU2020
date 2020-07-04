@@ -89,23 +89,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
     criterion = nn.MSELoss(reduction='mean')
 
-<<<<<<< HEAD
-	''' Train model. '''
-	# toggle comment of next two lines to either train network, or run tests with code on already trained network
-	train_nn(train_y,train_v,val_y,val_v,net,criterion,optimizer,args)
-	net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
-
-	def test_loss (y_test, v_test):
-		v_hat = net.forward(torch.from_numpy(y_test).float())
-		v = torch.from_numpy(v_test).float()
-		testloss = criterion(v_hat, v)
-
-		print ("Test loss: ", testloss.item())
-
-	test_loss(test_y, test_v)
-=======
     ''' Train model. '''
     # toggle comment of next two lines to either train network, or run tests with code on already trained network
     train_nn(train_y,train_v,val_y,val_v,net,criterion,optimizer,args)
     # net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
->>>>>>> 00b938b7210c9f3893a195709401356a7d48d486
