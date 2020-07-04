@@ -56,6 +56,7 @@ class MLP(nn.Module):
                 x0 = layer(x0)
             else:
                 x0 = self.sigmoid(layer(x0))
+
         return x0
 
 class RK4(nn.Module):
@@ -71,6 +72,7 @@ class RK4(nn.Module):
         x3 = self.dt * self.f(x0 + x2/2.)
         x4 = self.dt * self.f(x0 + x3)
         out = x0 + x1/6. + x2/3. + x3/3. + x4/6.
+
         return out
 
 if __name__ == "__main__":
@@ -95,4 +97,6 @@ if __name__ == "__main__":
     ''' Train model. '''
     # toggle comment of next two lines to either train network, or run tests with code on already trained network
     train_nn(train_y,val_y,net,criterion,optimizer,args)
-    # net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
+    #net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
+
+    #print("Test accurary: ", test_loss(net.f, test_y, (11/302)*train_y.shape[1]))

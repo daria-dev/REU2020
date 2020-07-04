@@ -113,10 +113,10 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
 
     # convert data to torch tensor
     # uses y to predict y at next time step instead of predicting v
-    train_y_tensor = torch.from_numpy(train_y[:-1]).float()
-    train_y1_tensor = torch.from_numpy(train_y[1:]).float()
-    val_y_tensor = torch.from_numpy(val_y[:-1]).float()
-    val_y1_tensor = torch.from_numpy(val_y[1:]).float()
+    train_y_tensor = torch.from_numpy(train_y[:,:-1,:]).float()
+    train_y1_tensor = torch.from_numpy(train_y[:,1:,:]).float()
+    val_y_tensor = torch.from_numpy(val_y[:,:-1,:]).float()
+    val_y1_tensor = torch.from_numpy(val_y[:,1:,:]).float()
 
     # create batches for training data
     train_dataset = torch.utils.data.TensorDataset(train_y_tensor, train_y1_tensor)
@@ -151,7 +151,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                 return loss
             optimizer.step(closure)
 
-        if (epoch+1) % 500 == 0:
+        if (epoch+1) % 100 == 0:
             with torch.no_grad():
                 loss_train = criterion(net(train_y_tensor), train_y1_tensor)
                 loss_val = criterion(net(val_y_tensor), val_y1_tensor)
@@ -162,67 +162,50 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
 
     torch.save(net.state_dict(),args.log_dir+'/net_state_dict.pt')
 
-# redefining some function from make_data to avoid command line arg problems
-# maybe make a new class for this?
-def initial(y0):
-    assert (len(y0.shape) == 1),'y0 must be a 1D array.'
+# def solve_ODE(t,y0,func):
+#     '''
+#     NOTES: A cleaner function for solve_ivp (i.e. adjust the many solve_ivp parameters
+#             here rather than at every occurance where it is used).
 
-    return np.array(y0)+np.random.uniform(low=-2, high=2, size=(len(y0),))
+#     INPUT:
+#         t = vector where elements are times at which to store solution (t subset of [args.T0,args.Tend])
+#         y0 = initial position data
 
-def solve_ODE(t,y0,func):
+#     OUTPUT:
+#         return #0 = solution of ODE at times 't' starting at 'y0'
+#     '''
+#     assert (len(y0.shape) == 1),'y0 must be a 1D array.'
+#     sol = solve_ivp(fun=func, t_span=[0, 10],
+#         y0=y0, method='RK45', t_eval=t,
+#         dense_output=False, vectorized=False,
+#         rtol=1e-9, atol=1e-9*np.ones((len(y0),)))
 
-    assert (len(y0.shape) == 1),'y0 must be a 1D array.'
-    sol = solve_ivp(fun=func, t_span=[0, 5],
-        y0=initial(y0), method='RK45', t_eval=t,
-        dense_output=False, vectorized=False,
-        rtol=1e-9, atol=1e-9*np.ones((len(y0),)))
+# # compute test loss for net using criterion
+# def test_loss (net, test_y, t0):
+#     loss = np.array([0.0])
+#     num_traj = test_y.shape[0]
+#     num_point = test_y[0].shape[0]
 
-    return np.transpose(sol.y)
+#     t = np.linspace(start=t0, stop=10, num=num_point)
 
-def spiral(t, y):
-    assert ((len(y.shape) == 1) or (len(y.shape) == 3)),'y must be a 1D or 3D array.'
+#     y0_l = test_y[:,0,:]
 
-
-    # Original
-    if len(y.shape) == 1:
-        v = np.array([y[1]**3, -( (y[0]+y[2])/2)**3 -0.2*y[1], y[2]/10.])
-    else:
-        v = np.zeros(y.shape)
-        v[:,:,0] = y[:,:,1]**3
-        v[:,:,1] = -((y[:,:,0]+y[:,:,2])/2.)**3 - 0.2*y[:,:,1]
-        v[:,:,2] = y[:,:,2]/10.
-    return v
-
-
-# generate test trajectories with exact velocity
-def generate_test_traj(t,y0,func):
-    data_y = []
-    for _ in range(5):
-        y = solve_ODE(t,y0,func)
-        data_y.append(y)
-    data_y = np.stack(data_y, axis=0)
-    data_v = func(t=None,y=data_y) # exact velocity calculated
-
-    return (data_v, data_y)
-
-# compute test loss for net using criterion and randomly generated trajectories
-def test_loss (net, criterion):
-    t = np.linspace(start=0, stop=5, num=100) # define grid on which to solve ODE
-    y0 = np.array([4, 3, -2]) # define center of neighborhood for initial starting points
-
-
-    v = []
-    y = []
-    y0_l = [initial(y0) for _ in range(5)]
-    loss = 0
-
-    for y0 in y0_l:
-        v, y = generate_test_traj(t, y0, spiral)
-        v_hat = net(torch.from_numpy(y).float())
-        loss += criterion(v_hat, torch.from_numpy(v).float())
+#     def f_hat(y, t):
+#         return net.forward(torch.from_numpy(y).float()).detach().numpy()
     
-    loss /= 5
+#     def criterion(y, y_hat):
+#         return np.mean((y - y_hat)**2)
 
-    return loss.item()
+#     # generate test trajectory starting at point after the last one
+#     # seen by net during training
+#     for y0 in y0_l:
+#         y_hat = solve_ODE(t, y0, f_hat)
+#         loss += criterion(y_hat, test_y)
+
+#     # average over trajectories
+#     loss /= num_traj
+
+#     return loss
+
 
 
