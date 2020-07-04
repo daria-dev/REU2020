@@ -1,8 +1,0 @@
-{
-  "T0": 0,
-  "Tend": 5,
-  "Delta": 2,
-  "num_point": 200,
-  "num_traj": 50,
-  "data_dir": "data"
-}
