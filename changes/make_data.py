@@ -148,48 +148,6 @@ def solve_ODE(t,y0,func):
 
 
 def generate_data(t,y0,func,func_name,data_type,num_traj):
-<<<<<<< HEAD
-	'''
-	NOTES: Generates multiple data trajectories (number specified by num_traj) starting near y0. 
-			Saves this data as 3D array with axes
-				- 0 = ith trajectory
-				- 1 = point at time t_i
-				- 2 = spatial dimension y_i
-
-	INPUT: 
-		t = vector where elements are times at which to store solution (t subset of [args.T0,args.Tend], containing endpoints)
-		y0 = initial position data
-		func = function defining ODE used to generate data
-		func_name = string with name of ODE
-		data_type = string with label for data (e.g. training, validation, testing)
-		num_traj = number of trajectories to generate
-
-	OUTPUT:
-		None
-	'''
-	assert (len(t.shape) == 1),'t must be a 1D array.'
-	assert ((args.T0 <= min(t)) & (max(t) <= args.Tend)),'t must be subset of [T0,Tend].'
-	assert (len(y0.shape) == 1),'y0 must be 1D array.'
-	assert (type(func_name) == str),'func_name must be string.'
-	assert (type(data_type) == str),'data_type must be string.'
-	assert (type(num_traj) == int),'num_traj must be integer.'
-
-	data_y = []
-	for _ in range(num_traj):
-		y = solve_ODE(t,y0,func)
-		data_y.append(y)
-	data_y = np.stack(data_y, axis=0)
-	#data_v = func(t=None,y=data_y) # exact velocity calculated
-	data_v = fwd_euler(t=None,y=data_y) # velocity calculated using forward euler
-	#data_v = central_diff(t=None,y=data_y) #velocity calculated using central difference
-
-	if data_y.shape[2] == 3 :
-		plot_3D(data_y,func_name,args.data_dir,data_type) # visualize solution
-
-	# save data
-	np.save(args.data_dir+'/'+data_type+'_y', data_y[:,1:-1])
-	np.save(args.data_dir+'/'+data_type+'_v', data_v)
-=======
     '''
     NOTES: Generates multiple data trajectories (number specified by num_traj) starting near y0.
             Saves this data as 3D array with axes
@@ -236,7 +194,6 @@ def generate_data(t,y0,func,func_name,data_type,num_traj):
     # save data
     np.save(args.data_dir+'/'+data_type+'_y', data_y)
     np.save(args.data_dir+'/'+data_type+'_v', data_v)
->>>>>>> 00b938b7210c9f3893a195709401356a7d48d486
 
 if __name__ == "__main__":
     ''' Make directory to store data. '''

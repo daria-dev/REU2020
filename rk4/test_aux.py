@@ -79,7 +79,7 @@ def test_loss(net, criterion, test_y):
 
     test_y_ = generate_trajectories(test_y[:, 0, :], net_func, steps=test_y.shape[1])
 
-    if test_y.shape[2] == 3:
-        plot_3D_pred(test_y, test_y_)  # visualize solution
+    # if test_y.shape[2] == 3:
+    #     plot_3D_pred(test_y, test_y_)  # visualize solution
 
     return criterion(test_y, test_y_)
