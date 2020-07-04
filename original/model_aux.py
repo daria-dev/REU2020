@@ -53,43 +53,42 @@ def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
     else:
         print(line)
 
-def plot_3D(data,func_name,dir_name,data_type):
-    '''
-    NOTES: Plots 3D data and saves plot as png.
+def plot_3D(data,func_name,dir_name):
+    	'''
+	NOTES: Plots 3D data and saves plot as png.
 
-    INPUT: 
-        data = data position points; 3D array with axes
-                - 0 = ith trajectory
-                - 1 = point at time t_i
-                - 2 = spatial dimension y_i
-        func_name = string with name of ODE
-        dir_name = str; name of directory to save plot
-        data_type = string with label for data (e.g. training, validation, testing)
+	INPUT: 
+		data = data position points; 3D array with axes
+				- 0 = ith trajectory
+				- 1 = point at time t_i
+				- 2 = spatial dimension y_i
+		func_name = string with name of ODE
+		dir_name = str; name of directory to save plot
+		data_type = string with label for data (e.g. training, validation, testing)
 
-    OUTPUT:
-        None
-    '''
-    assert (len(data.shape) == 3),'data must be 3D array.'
-    assert (data.shape[2] == 3),'data must be 3D.'
-    assert (type(func_name) == str),'func_name must be string.'
-    assert (type(dir_name) == str),'dir_name must be string.'
-    assert (type(data_type) == str),'data_type must be string.'
+	OUTPUT:
+		None
+	'''
+	assert (len(data.shape) == 3),'data must be 3D array.'
+	assert (data.shape[2] == 3),'data must be 3D.'
+	assert (type(func_name) == str),'func_name must be string.'
+	assert (type(dir_name) == str),'dir_name must be string.'
 
-    plt.close()
-    tot_num_traj = data.shape[0]
-    fig = plt.figure()
-    for traj in range(tot_num_traj):
-        ax = fig.gca( projection='3d')
-        ax.plot(data[traj,:,0],data[traj,:,1],data[traj,:,2], lw=0.5)
-        ax.view_init(elev=26,azim=-133)
-    ax.set_xlabel('y_1')
-    ax.set_ylabel('y_2')
-    ax.set_zlabel('y_3')
-    ax.set_title(func_name+': '+data_type+' data')
-    # plt.savefig(args.data_dir+'/spiral_'+('train' if train else 'test')+'_data.svg')
-    plt.savefig(dir_name+'/'+func_name+'_'+data_type+'_data.png')
-    plt.show()
-    plt.close()
+	plt.close()
+	tot_num_traj = data.shape[0]
+	fig = plt.figure()
+	for traj in range(tot_num_traj):
+		ax = fig.gca( projection='3d')
+		ax.plot(data[traj,:,0],data[traj,:,1],data[traj,:,2], lw=0.5)
+		ax.view_init(elev=26,azim=-133)
+	ax.set_xlabel('y_1')
+	ax.set_ylabel('y_2')
+	ax.set_zlabel('y_3')
+	ax.set_title(func_name+': data')
+	# plt.savefig(args.data_dir+'/spiral_'+('train' if train else 'test')+'_data.svg')
+	plt.savefig(dir_name+'/'+func_name+'_data.png')
+	plt.show()
+	plt.close()
 
 def train_nn(train_y,train_v,val_y,val_v,net,criterion,optimizer,args):
     '''

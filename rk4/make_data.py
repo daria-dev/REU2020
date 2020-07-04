@@ -26,7 +26,7 @@ parser.add_argument('--T_ss', type=int, default = 250,
     help='number of points in training set')
 parser.add_argument('--V_ss', type=int,default = 75,
     help='number of trajectories in validation set')
-parser.add_argument('--noise',type=float,default=0.05,
+parser.add_argument('--noise',type=float,default=None,
         help='percent of noise to add as a float, else None')
 args = parser.parse_args()
 
@@ -181,7 +181,6 @@ def solve_ODE(t,y0,func):
                 rtol=1e-12, atol=1e-12*np.ones((len(y0),)))
     
     return np.transpose(sol.y)
-
 
 
 def generate_data(t,y0,func,func_name,data_type,num_traj):

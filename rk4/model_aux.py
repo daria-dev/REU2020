@@ -113,10 +113,10 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
 
     # convert data to torch tensor
     # uses y to predict y at next time step instead of predicting v
-    train_y_tensor = torch.from_numpy(train_y[:,:-1,:]).float()
-    train_y1_tensor = torch.from_numpy(train_y[:,1:,:]).float()
-    val_y_tensor = torch.from_numpy(val_y[:,:-1,:]).float()
-    val_y1_tensor = torch.from_numpy(val_y[:,1:,:]).float()
+    train_y_tensor = torch.from_numpy(train_y[:,:-1]).float()
+    train_y1_tensor = torch.from_numpy(train_y[:,1:]).float()
+    val_y_tensor = torch.from_numpy(val_y[:,:-1]).float()
+    val_y1_tensor = torch.from_numpy(val_y[:,1:]).float()
 
     # create batches for training data
     train_dataset = torch.utils.data.TensorDataset(train_y_tensor, train_y1_tensor)
@@ -161,51 +161,4 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     print('\n=====> Running time: {}'.format(end-start))
 
     torch.save(net.state_dict(),args.log_dir+'/net_state_dict.pt')
-
-# def solve_ODE(t,y0,func):
-#     '''
-#     NOTES: A cleaner function for solve_ivp (i.e. adjust the many solve_ivp parameters
-#             here rather than at every occurance where it is used).
-
-#     INPUT:
-#         t = vector where elements are times at which to store solution (t subset of [args.T0,args.Tend])
-#         y0 = initial position data
-
-#     OUTPUT:
-#         return #0 = solution of ODE at times 't' starting at 'y0'
-#     '''
-#     assert (len(y0.shape) == 1),'y0 must be a 1D array.'
-#     sol = solve_ivp(fun=func, t_span=[0, 10],
-#         y0=y0, method='RK45', t_eval=t,
-#         dense_output=False, vectorized=False,
-#         rtol=1e-9, atol=1e-9*np.ones((len(y0),)))
-
-# # compute test loss for net using criterion
-# def test_loss (net, test_y, t0):
-#     loss = np.array([0.0])
-#     num_traj = test_y.shape[0]
-#     num_point = test_y[0].shape[0]
-
-#     t = np.linspace(start=t0, stop=10, num=num_point)
-
-#     y0_l = test_y[:,0,:]
-
-#     def f_hat(y, t):
-#         return net.forward(torch.from_numpy(y).float()).detach().numpy()
-    
-#     def criterion(y, y_hat):
-#         return np.mean((y - y_hat)**2)
-
-#     # generate test trajectory starting at point after the last one
-#     # seen by net during training
-#     for y0 in y0_l:
-#         y_hat = solve_ODE(t, y0, f_hat)
-#         loss += criterion(y_hat, test_y)
-
-#     # average over trajectories
-#     loss /= num_traj
-
-#     return loss
-
-
 
