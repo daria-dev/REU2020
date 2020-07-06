@@ -64,7 +64,8 @@ class MLP(nn.Module):
         self.sigmoid = nn.ReLU()
 
         # layer for prior
-        self.priorLayer = nn.Linear(input_dim*(input_dim - 1), input_dim, bias=False)
+        # size: (n choose 2) + n input ---> n output
+        self.priorLayer = nn.Linear(0.5*input_dim*(input_dim + 1), input_dim, bias=False)
 
         return
 
