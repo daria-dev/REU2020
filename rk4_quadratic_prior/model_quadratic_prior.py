@@ -64,7 +64,7 @@ class MLP(nn.Module):
         self.sigmoid = nn.ReLU()
 
         # layer for prior
-        self.priorLayer = nn.Linear(input_dim*(input_dim - 1), input_dim*(input_dim - 1), bias=False)
+        self.priorLayer = nn.Linear(input_dim*(input_dim - 1), input_dim, bias=False)
 
         return
 
@@ -81,7 +81,7 @@ class MLP(nn.Module):
             else:
                 x0 = self.sigmoid(layer(x0))
 
-        return x0 + (self.priorLayer(y)).sum()
+        return x0 + self.priorLayer(y)
 
 class RK4(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, nn_depth, dt):
