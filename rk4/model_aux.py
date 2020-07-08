@@ -85,6 +85,36 @@ def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
     else:
         print(line)
 
+def plot_loss(train_loss, val_loss, epoch_list, dir_name):
+    '''
+    NOTES: Plots 2D data and saves plot as png.
+
+    INPUT:
+        epoch_list = list of epochs in which loss data collected
+        train_loss = list of train losses
+        val_loss = list of val losses
+        dir_name = str; name of directory to save plot
+
+    OUTPUT:
+        None
+    '''
+
+    assert (type(dir_name) == str),'dir_name must be string.'
+    assert (len(train_loss) == len(val_loss)),'same number of datapoints'
+    assert (len(train_loss) == len(epoch_list)),'same number of datapoints'
+    
+    plt.close()
+    fig = plt.figure()
+    plt.plot(epoch_list, train_loss, label = 'Train')
+    plt.plot(epoch_list, val_loss, label = 'Validation')
+    fig.suptitle('Loss vs Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend(loc="upper left")
+    plt.savefig(dir_name+'/'+ 'Loss.png')
+    plt.show()
+    plt.close()
+
 def train_nn(train_y,val_y,net,criterion,optimizer,args):
     '''
     NOTES: Trains neural network and checks against validation data, and saves network state_dict. 
@@ -122,6 +152,9 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     train_dataset = torch.utils.data.TensorDataset(train_y_tensor, train_y1_tensor)
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
+    
+    # holds loss data
+    train_list,val_list,epoch_list = [],[],[]
 
     # run training
     current_step = 0
@@ -155,6 +188,10 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
             with torch.no_grad():
                 loss_train = criterion(net(train_y_tensor), train_y1_tensor)
                 loss_val = criterion(net(val_y_tensor), val_y1_tensor)
+                train_list.append(loss_train)
+                val_list.append(loss_val)
+                epoch_list.append(epoch + 1)
+
             print_epoch(epoch, args.num_epoch, loss_train.item(), loss_val.item(), overwrite=False) # print at each batch
 
     end = time.time()
@@ -162,3 +199,4 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
 
     torch.save(net.state_dict(),args.log_dir+'/net_state_dict.pt')
 
+    plot_loss(train_list, val_list, epoch_list, args.data_dir)
