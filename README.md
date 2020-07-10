@@ -24,5 +24,5 @@
 - model_aux.py: Original model helper functions with regularization
 - test_aux.py: Generates trajectories based on trained model and compares with test data
 
-**/orginial**:
-- *.py: Orginial code
+**/original**:
+- *.py: Original code
