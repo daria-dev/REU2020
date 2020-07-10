@@ -111,6 +111,7 @@ def plot_loss(train_loss, val_loss, epoch_list, dir_name):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend(loc="upper left")
+    plt.yscale('log')
     plt.savefig(dir_name+'/'+ 'Loss.png')
     plt.show()
     plt.close()
