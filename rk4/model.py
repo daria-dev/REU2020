@@ -12,7 +12,7 @@ parser.add_argument('--nn_depth', type=int, default=1,
     help='number of hidden layers')
 parser.add_argument('--batch_size', type=int, default=32,
     help='number of')
-parser.add_argument('--num_epoch', type=int, default=5000,
+parser.add_argument('--num_epoch', type=int, default=1000,
     help='number of training epochs')
 parser.add_argument('--lr', type=float, default=0.01,
     help='learning rate')
@@ -102,7 +102,14 @@ if __name__ == "__main__":
     train_nn(train_y,val_y,net,criterion,optimizer,args)
     net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
 
+    # toggle comments for next two functions to either calculate loss with MSE or Relative Loss
+
+    #MSE
+    #def crit(y, y_):
+        #return np.mean((y - y_) ** 2)
+    
+    #Relative Loss
     def crit(y, y_):
-        return np.mean((y - y_) ** 2)
+        return np.mean(abs((y_ - y)/y))
 
     print('test loss:', test_loss(net, crit, test_y))
