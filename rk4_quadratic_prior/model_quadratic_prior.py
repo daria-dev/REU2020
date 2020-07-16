@@ -64,8 +64,7 @@ class MLP(nn.Module):
         self.sigmoid = nn.ReLU()
 
         # layer for prior
-        # size: (n choose 2) + n input ---> n output
-        self.priorLayer = nn.Linear(0.5*input_dim*(input_dim + 1), input_dim, bias=False)
+        self.priorLayer = nn.Linear(input_dim, input_dim, bias=False)
 
         return
 
@@ -91,11 +90,11 @@ class RK4(nn.Module):
         self.dt = dt
         return
 
-    def forward(self, x0, y):
-        x1 = self.dt * self.f(x0, y)
-        x2 = self.dt * self.f(x0 + x1/2., y)
-        x3 = self.dt * self.f(x0 + x2/2., y)
-        x4 = self.dt * self.f(x0 + x3, y)
+    def forward(self, x0):
+        x1 = self.dt * self.f(x0, make_product(x0))
+        x2 = self.dt * self.f(x0 + x1/2., make_product(x0 + x1/2.))
+        x3 = self.dt * self.f(x0 + x2/2., make_product(x0 + x2/2.))
+        x4 = self.dt * self.f(x0 + x3, make_product(x0 + x3))
         out = x0 + x1/6. + x2/3. + x3/3. + x4/6.
 
         return out
@@ -126,7 +125,12 @@ if __name__ == "__main__":
     train_nn(train_y,val_y,net,criterion,optimizer,args)
     # net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
 
+    #MSE
+    #def crit(y, y_):
+        #return np.mean((y - y_) ** 2)
+    
+    #Relative Loss
     def crit(y, y_):
-        return np.mean((y - y_) ** 2)
+        return np.mean(abs((y_ - y)/y))
 
     print('test loss:', test_loss(net, crit, test_y))

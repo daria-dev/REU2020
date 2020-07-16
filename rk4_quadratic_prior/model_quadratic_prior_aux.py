@@ -19,6 +19,10 @@ def make_directory(dir_name):
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
 
+###############################
+''' Graphing and output Utils '''
+################################
+
 def plot_3D(data,func_name,dir_name,data_type):
     '''
     NOTES: Plots 3D data and saves plot as png.
@@ -85,6 +89,50 @@ def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
     else:
         print(line)
 
+def plot_loss(train_loss, val_loss, epoch_list, dir_name):
+    '''
+    NOTES: Plots 2D data and saves plot as png.
+
+    INPUT:
+        epoch_list = list of epochs in which loss data collected
+        train_loss = list of train losses
+        val_loss = list of val losses
+        dir_name = str; name of directory to save plot
+
+    OUTPUT:
+        None
+    '''
+
+    assert (type(dir_name) == str),'dir_name must be string.'
+    assert (len(train_loss) == len(val_loss)),'same number of datapoints'
+    assert (len(train_loss) == len(epoch_list)),'same number of datapoints'
+    
+    plt.close()
+    fig = plt.figure()
+    plt.plot(epoch_list, train_loss, label = 'Train')
+    plt.plot(epoch_list, val_loss, label = 'Validation')
+    fig.suptitle('Loss vs Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend(loc="upper left")
+    plt.yscale('log')
+    plt.savefig(dir_name+'/'+ 'Loss.png')
+    plt.show()
+    plt.close()
+
+###########################################
+'''Helper functions for generating prior'''
+##########################################
+
+def lorenz_prior(x0):
+    y = torch.zeros(x0.shape[0], x0.shape[1], requires_grad=False)
+
+    for n in range(x0.shape[0]):
+        # fill with relevant products
+        y[n,:] = torch.tensor([0, x0[n,0]*x0[n,2], x0[n,0]*x0[n,1]])
+        
+    return y
+
 # helper function for make product
 # [in] x0 = N x M matrix
 # [out] y = N x M(M-1) matrix where each row n contains
@@ -92,37 +140,40 @@ def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
 #       duplicates, i.e only one of x0_n,i*x0_n,j and x0_n,j*x0_n,i
 #       is present for each row n.
 def product(x0):
-        # dimensions of x0
-        N = x0.shape[0]
-        M = x0.shape[1]
+    # dimensions of x0
+    N = x0.shape[0]
+    M = x0.shape[1]
         
-        # creates N x M(M-1) matrxi
-        y = torch.zeros(N, M*(M -1))
+    # creates N x (M + (M choose 2)) matrix
+    y = torch.zeros(N, M*(M+1)//2)
 
-        # fills y with products, discarding duplicates
-        for n in range(N):
-            x = torch.reshape(x0[n,:], (1,M))
-            prod = x.T @ x
+    # fills y with products, discarding duplicates
+    for n in range(N):
+        x = torch.reshape(x0[n,:], (1,M))
+        prod = x.T @ x
 
-            # get upper triangular part of prod + diagonal
-            y[n,:] = prod[torch.triu_indices(M,M)[0], torch.triu_indices(M,M)[1]]
+        # get upper triangular part of prod + diagonal
+        y[n,:] = prod[torch.triu_indices(M,M)[0], torch.triu_indices(M,M)[1]]
         
-        return y
-
-# returns matrix of products
-# [in] x0 = input to neural network
-# [out] y = matrix of products
-def make_product(x0):
-    if len(x0.shape) == 3:
-        y = torch.zeros(x0.shape[0], x0.shape[1], x0.shape[2]*(x0.shape[2]-1))
-
-        for k in range(x0.shape[0]):
-            y[k,:,:] = product(x0[k,:,:])
-    else:
-        y = product(x0)
-    
     return y
 
+# caclulates prior for each trajectory
+# [in] x0 = input to neural network
+# [out] y = tensor of products
+def make_product(x0):
+    if len(x0.shape) == 3:
+        y = torch.zeros(x0.shape[0], x0.shape[1], x0.shape[2], requires_grad=False)
+
+        for k in range(x0.shape[0]):
+            y[k,:,:] = lorenz_prior(x0[k,:,:])
+    else:
+        y = lorenz_prior(x0)
+        
+    return y;
+
+#######################################
+'''Neural Network training function'''
+########################################
 
 def train_nn(train_y,val_y,net,criterion,optimizer,args):
     '''
@@ -162,12 +213,8 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     train_loader = torch.utils.data.DataLoader(
         dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
 
-    # process validation and train data
-    x0_v = val_y_tensor
-    y_v = make_product(x0_v)
-
-    x0_t = train_y_tensor
-    y_t = make_product(x0_t)
+    # holds loss data
+    train_list,val_list,epoch_list = [],[],[]
 
     # run training
     current_step = 0
@@ -175,13 +222,9 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
         for i, (train_y_batch, train_y1_batch) in enumerate(train_loader):
             current_step += 1
 
-            # process batch train data
-            x0_tb = train_y_batch
-            y_tb = make_product(x0_tb)
-
             def closure():
                 optimizer.zero_grad()
-                loss = criterion(net(x0_tb, y_tb), train_y1_batch)
+                loss = criterion(net(train_y_batch), train_y1_batch)
 
                 # add regularization if necessary
                 if args.Reg == 'L2':
@@ -206,12 +249,18 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
 
         if (epoch+1) % 100 == 0:
             with torch.no_grad():
-                loss_train = criterion(net(x0_t, y_t), train_y1_tensor)
-                loss_val = criterion(net(x0_v, y_v), val_y1_tensor)
+                loss_train = criterion(net(train_y_tensor), train_y1_tensor)
+                loss_val = criterion(net(val_y_tensor), val_y1_tensor)
+                train_list.append(loss_train)
+                val_list.append(loss_val)
+                epoch_list.append(epoch + 1)
+
             print_epoch(epoch, args.num_epoch, loss_train.item(), loss_val.item(), overwrite=False) # print at each batch
 
     end = time.time()
     print('\n=====> Running time: {}'.format(end-start))
 
     torch.save(net.state_dict(),args.log_dir+'/net_state_dict.pt')
+
+    plot_loss(train_list, val_list, epoch_list, args.data_dir)
 

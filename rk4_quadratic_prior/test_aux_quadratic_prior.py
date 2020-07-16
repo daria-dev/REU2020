@@ -3,8 +3,6 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
-from scipy.integrate import solve_ivp
-from model_quadratic_prior_aux import product, make_product
 
 
 def solve_ODE_nn(t, y0, net_func):
@@ -23,8 +21,7 @@ def generate_trajectories(y0, net_func, steps):
 
     for i in range(steps):
         y[:, i, :] = y_cur
-        y_prod = make_product(torch.tensor(y_cur, dtype=torch.float32))
-        y_cur = net_func(y_cur, y_prod)
+        y_cur = net_func(y_cur)
 
     return y
 
@@ -75,8 +72,8 @@ def test_loss(net, criterion, test_y):
         test loss according to criterion
     '''
     # wrapper function for neural network
-    def net_func(y, y_prod):
-        y1 = net.forward(torch.tensor(y, dtype=torch.float32), y_prod).detach().numpy()
+    def net_func(y):
+        y1 = net.forward(torch.tensor(y, dtype=torch.float32)).detach().numpy()
         return y1
 
     test_y_ = generate_trajectories(test_y[:, 0, :], net_func, steps=test_y.shape[1])
