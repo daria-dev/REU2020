@@ -41,6 +41,8 @@ parser.add_argument('--log_dir', type=str, default='results',
     help='name for directory in which to save results')
 parser.add_argument('--dt', type=float, default=0.00998,
     help='time step for RK4')
+parser.add_argument('--symbolic_reg', type=bool, default=False,
+    help='True if sybmolic regression should be used to initialize prior layer weights')
 args = parser.parse_args()
 
 class MLP(nn.Module):
@@ -51,7 +53,7 @@ class MLP(nn.Module):
         h_i (1 <= i <= last-1) can refer to the ith hidden layer
     '''
 
-    def __init__(self, input_dim, hidden_dim, output_dim, nn_depth):
+    def __init__(self, input_dim, hidden_dim, output_dim, nn_depth, init_weight):
         super(MLP, self).__init__()
         self.hidden = nn.ModuleList()
 
@@ -65,6 +67,7 @@ class MLP(nn.Module):
 
         # layer for prior
         self.priorLayer = nn.Linear(input_dim, input_dim, bias=False)
+        self.priorLayer.weight.data = init_weight
 
         return
 
@@ -84,9 +87,9 @@ class MLP(nn.Module):
         return x0 + self.priorLayer(y)
 
 class RK4(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, nn_depth, dt):
+    def __init__(self, input_dim, hidden_dim, output_dim, nn_depth, dt, init_weight):
         super(RK4, self).__init__()
-        self.f = MLP(input_dim, hidden_dim, output_dim, nn_depth)
+        self.f = MLP(input_dim, hidden_dim, output_dim, nn_depth, init_weight)
         self.dt = dt
         return
 
@@ -109,14 +112,28 @@ if __name__ == "__main__":
 
     print('\nNote that dt should be calculated using (Tend-T0)/num_point. \nChange value manually if necessary. \n')
 
-    #'''Load data.'''
+    '''Load data.'''
     train_y = np.load(args.data_dir+'/train_y.npy')
     val_y = np.load(args.data_dir+'/val_y.npy')
     test_y = np.load(args.data_dir+'/test_y.npy')
+    dim = train_y.shape[2] # dimension of data
+
+    '''Initialize prior layer weights'''
+    if (args.symbolic_reg):
+
+        # collapse trajectories into signle matrix x and estimate velocities
+        x_tmp = train_y.reshape(train_y.shape[0]*train_y.shape[1], train_y.shape[2])
+        x = make_product(x_tmp)
+        v = fwd_euler(x_tmp.reshape(1, x_tmp.shape[0], x_tmp.shape[1]))[0,:,:]
+
+        prior_weights = torch.tensor(np.linalg.lstsq(x[1:-1,:],v,rcond=None)[0], dtype=torch.float32)
+    
+    else:
+        prior_weights = torch.FloatTensor(dim, dim).uniform_(-1,1)
 
     ''' Define NET structure. '''
-    dim = train_y.shape[2] # dimension of data
-    net = RK4(input_dim=dim, hidden_dim=args.hidden_dim, output_dim=dim, nn_depth=args.nn_depth, dt=args.dt)
+    net = RK4(input_dim=dim, hidden_dim=args.hidden_dim, output_dim=dim, nn_depth=args.nn_depth, dt=args.dt, 
+             init_weight=prior_weights)
     optimizer = torch.optim.Adam(net.parameters(), lr=args.lr)
     criterion = nn.MSELoss(reduction='mean')
 
@@ -124,6 +141,7 @@ if __name__ == "__main__":
     # toggle comment of next two lines to either train network, or run tests with code on already trained network
     train_nn(train_y,val_y,net,criterion,optimizer,args)
     # net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
+
 
     #MSE
     #def crit(y, y_):

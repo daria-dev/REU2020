@@ -19,6 +19,32 @@ def make_directory(dir_name):
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
 
+# NOTE: time parameters set for Lorenz system
+def fwd_euler(y): 
+    '''
+    NOTES: Calculates velocity using the Forward Euler Approximation
+            Input y is either a 1D array (used mainly with built in ODE solvers), or 3D array
+            (to generate velocity data over multiple trajectories for training).
+
+    INPUT:
+        y = position data; 1D array, or 3D array with axes
+    OUTPUT:
+        return #0 = velocity data
+    '''
+
+    assert ((len(y.shape) == 1) or (len(y.shape) == 3)),'y must be a 1D or 3D array.'
+
+    if len(y.shape) == 1:
+        dt = (25 - 0)/len(y)
+        end = len(y)
+        v = np.array([ (y[2:end]-y[1:end-1])/dt ])
+    else:
+        dt = (25 - 0)/len(y[0,:])
+        end = y.shape[1]
+        v = np.zeros((y.shape[0],y.shape[1]-2,y.shape[2]))
+        v[:,:,:] = (y[:,2:end,:]-y[:,1:end-1,:])/dt
+    return v
+
 ###############################
 ''' Graphing and output Utils '''
 ################################
