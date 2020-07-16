@@ -1,3 +1,10 @@
+## [in] - ODE System
+#       - domain (file with points)
+#       - directory where to save jacobian 
+#
+# [out] - file with Jacobian on domain points
+
+
 import argparse, json
 from model_aux import make_directory, plot_3D
 import numpy as np
@@ -7,27 +14,22 @@ from mpl_toolkits.mplot3d import Axes3D
 parser = argparse.ArgumentParser('DIFF')
 parser.add_argument('--ODE_system', type=float, default='Lorenz',
     help='system for which to generate prior derivative')
-parser.add_argument('--domain', type=float, default='C',
+parser.add_argument('--domain', type=float,
     help='domain on which to generate prior derivative')
-parser.add_argument('--num_point', type=int, default=100,
-    help='number of points per trajectory')
-parser.add_argument('--num_traj', type=int, default=100,
-    help='number of training trajectories')
-parser.add_argument('--data_dir', type=str, default='diff_data',
-        help='name for data directory')
+parser.add_argument('--log_dir', type=str, default='diff_data',
+        help='name for data directory in which to save derivative')
 parser.add_argument('--noise',type=float,default=None,
         help='percent of noise to add as a float, else None')
 args = parser.parse_args()
 
 # Spiral ODE Jacobian
-def spiral(t, y): 
+def spiral(y): 
     '''
     NOTES: Defines Jacobian for ODE system that generates a spiral/corkscrew shape.
-            Input y is either a 1D array (used mainly with built in ODE solvers), or 3D array
-            (to generate velocity data over multiple trajectories for training).
+            Input y is either a 1D array , or 3D array
+            (to generate jacobian data over multiple trajectories).
 
     INPUT:
-        t = dummy variable (system is autonomous, but python solvers require time input)
         y = position data; 1D array, or 3D array with axes
             - 0 = ith trajectory
             - 1 = point at time t_i
@@ -60,7 +62,7 @@ def spiral(t, y):
     return J
 
 # Lorenz ODE Jacobian
-def lorenz(t, y): 
+def lorenz(y): 
     assert ((len(y.shape) == 1) or (len(y.shape) == 3)),'y must be a 1D or 3D array.'
 
     if len(y.shape) == 1:
@@ -84,7 +86,7 @@ def lorenz(t, y):
     return J
 
 # Hopf Bifurication ODE System Jacobian
-def hopf_bifurcation(t, y): 
+def hopf_bifurcation(y): 
     assert ((len(y.shape) == 1) or (len(y.shape) == 3)),'y must be a 1D or 3D array.'
 
     if len(y.shape) == 1:
@@ -105,7 +107,7 @@ def hopf_bifurcation(t, y):
     return J
     
 # Glycolytic ODE System Jacobian
-def glycolytic_oscillator(t, y):
+def glycolytic_oscillator(y):
     
     assert ((len(y.shape) == 1) or (len(y.shape) == 3)), 'y must be a 1D or 3D array.'
 
@@ -175,120 +177,67 @@ def glycolytic_oscillator(t, y):
                     / ((1 + (y[:,:,5] / K1) ** q)**2) )
 
         J[:,:,1,0] = 2*(k1 *y[:,:,5]) / (1 +(y[:,:,5] / K1) ** q)
-        J[:,:,1,1] = - k2*(N - y[4]) - k6*y[4]
-        J14 = - k2*y[1] - k6*y[1]
-        J15 = 2*( ((1+(y[5]/K1)**q)k1*y[0]-k1y[0]*y[5]*q*(y[5]/K1)**(q-1)) / ((1 + (y[5] / K1) ** q)**2) )
+        J[:,:,1,1] = - k2*(N - y[:,:,4]) - k6*y[:,:,4]
+        J[:,:,1,4] = - k2*y[:,:,1] - k6*y[:,:,1]
+        J[:,:,1,5] = 2*( ((1+(y[:,:,5]/K1)**q)k1*y[:,:,0]-k1y[:,:,0]*y[:,:,5]*q*(y[:,:,5]/K1)**(q-1)) 
+                / ((1 + (y[:,:,5] / K1) ** q)**2) )
         
-        J21 = k2 * (N - y[4])
-        J22 = -k3 * (A - y[5])
-        J24 = k2 * y[1]
-        J25 = - k3 * y[2]
+        J[:,:,2,1] = k2 * (N - y[:,:,4])
+        J[:,:,2,2] = -k3 * (A - y[:,:,5])
+        J[:,:,2,4] = k2 * y[:,:,1]
+        J[:,:,2,5] = - k3 * y[:,:,2]
 
-        J32 = k3 * (A - y[5])
-        J33 = - k4 * y[3] - kappa
-        J34 = - k4 * y[3]
-        J35 = - k3 * y[2]
-        J36 = kappa
+        J[:,:,3,2] = k3 * (A - y[:,:,5])
+        J[:,:,3,3] = - k4 * y[:,:,3] - kappa
+        J[:,:,3,4] = - k4 * y[:,:,3]
+        J[:,:,3,5] = - k3 * y[:,:,2]
+        J[:,:,3,6] = kappa
 
-        J41 = k2 * (N - y[4])- k6 * y[4]
-        J43 = - k4 * y[4]
-        J44 = -k2 * y[1] - k4 * y[3] - k6 * y[1]
+        J[:,:,4,1] = k2 * (N - y[:,:,4])- k6 * y[:,:,4]
+        J[:,:,4,3] = - k4 * y[:,:,4]
+        J[:,:,4,4] = -k2 * y[:,:,1] - k4 * y[:,:,3] - k6 * y[:,:,1]
 
-        J50 = -2 * (k1 * y[5]) / (1 + (y[5] / K1) ** q)
-        J52 = 2 * k3 *(A - y[5])
-        J55 = -2*( ((1+(y[5]/K1)**q)k1*y[0]-k1y[0]*y[5]*q*(y[5]/K1)**(q-1)) / ((1 + (y[5] / K1) ** q)**2) )
-               - 2 * k3 * y[2] - k5
+        J[:,:,5,0] = -2 * (k1 * y[:,:,5]) / (1 + (y[:,:,5] / K1) ** q)
+        J[:,:,5,2] = 2 * k3 *(A - y[:,:,5])
+        J[:,:,5,5] = -2*( ((1+(y[:,:,5]/K1)**q)k1*y[:,:,0]-k1*y[:,:,0]*y[:,:,5]*q*(y[:,:,5]/K1)**(q-1)) / 
+                    ((1 + (y[:,:,5] / K1) ** q)**2) ) - 2 * k3 * y[:,:,2] - k5
 
-        J63 = psi * kappa
-        J66 = -psi * kappa - k
-
+        J[:,:,6,3] = psi * kappa
+        J[:,:,6,6] = -psi * kappa - k
     return J
 
-def generate_data(t,y0,func,func_name,data_type,num_traj):
+# TODO: finish generate data
+def generate_data(func, domain):
     '''
-    NOTES: Generates multiple data trajectories (number specified by num_traj) starting near y0.
-            Saves this data as 3D array with axes
-                - 0 = ith trajectory
-                - 1 = point at time t_i
-                - 2 = spatial dimension y_i
+    NOTES: Generates jacobian specified by func on domain points
 
     INPUT:
-        t = vector where elements are times at which to store solution (t subset of [args.T0,args.Tend], containing endpoints)
-        y0 = initial position data
-        func = function defining ODE used to generate data
-        func_name = string with name of ODE
-        num_traj = number of trajectories to generate
+        func = function defining Jacobian
+        domain = points on which to caclulate
 
     OUTPUT:
-        None
+        saves jacobian in file
     '''
-    assert (len(t.shape) == 1),'t must be a 1D array.'
-    assert ((args.T0 <= min(t)) & (max(t) <= args.Tend)),'t must be subset of [T0,Tend].'
     assert (type(func_name) == str),'func_name must be string.'
-    assert (type(num_traj) == int),'num_traj must be integer.'
 
-    data_y = []
-    for _ in range(num_traj):
-        if args.ODE_system == 'Glycolytic': y0 = initial(y0)
-        y = solve_ODE(t,y0,func)
-        data_y.append(y)
-    data_y = np.stack(data_y, axis=0)
-    
-    # add noise
-    if args.noise != None:
-        tot_num_traj = data_y.shape[0]
-        for traj in range(tot_num_traj):
-            y_vals = data_y[traj,:,2]
-            noiseSigma = args.noise * y_vals;
-            mu,sigma = 0,1
-            noise  = noiseSigma*np.random.normal(mu, sigma, args.num_point)
-            data_y[traj,:,2] += noise
-    
-    # save data for model 1
-    if args.split_method == 1: 
-        np.save(args.data_dir+'/data_y', data_y)
-        if data_y.shape[2] == 3 :
-            plot_3D(data_y,func_name,args.data_dir,data_type) # visualize solution
-    
-    # split and save train/val/test based on model 2
-    elif args.split_method == 2:
-        train_y = data_y[:,:args.T_ss,:]
-        val_y = data_y[:args.V_ss,args.T_ss:,:]
-        test_y = data_y[args.V_ss:, args.T_ss:, :]
-        np.save(args.data_dir+'/'+'train'+'_y', train_y)
-        np.save(args.data_dir+'/'+'val'+'_y', val_y)
-        np.save(args.data_dir+'/'+'test'+'_y', test_y)
-        
-
-        if data_y.shape[2] == 3 :
-            plot_3D(train_y,func_name,args.data_dir,'training') # visualize solution
-            plot_3D(val_y,func_name,args.data_dir,'validation')
-            plot_3D(test_y,func_name,args.data_dir,'testing')
-    
+    return
     
     
 
 if __name__ == "__main__":
     ''' Make directory to store data. '''
-    make_directory(args.data_dir) # make directory to store data
+    make_directory(args.log_dir) # make directory to store Jacobian
 
-    ''' Initialize ODE input. '''
-    t = np.linspace(start=args.T0, stop=args.Tend, num=args.num_point) # define grid on which to solve ODE
 
     func_name = args.ODE_system
     if func_name == 'Spiral': 
         func = spiral
-        y0 = np.array([4, 3, -2]) # define center of neighborhood for initial starting points
     elif func_name == 'Hopf': 
         func = hopf_bifurcation
-        y0 = np.array([-0.15, 0, 2])
     elif func_name == 'Lorenz': 
         func = lorenz
-        y0 = np.array([-8, 7, 27])
     elif func_name == 'Glycolytic': 
         func = glycolytic_oscillator
-        y0 = None # dummy variable 
-                  # does not take in y0, samples random y0 instead
         
     ''' Save parameters for reference. '''
     # save args
@@ -297,12 +246,5 @@ if __name__ == "__main__":
     np.save(args.data_dir+'/grid',t) # save grid
     np.save(args.data_dir+'/ipcenter',y0) # save center
     
-    # Generate data based on model 1
-    if args.split_method == 1:
-        generate_data(t=t,y0=y0,func=func,func_name=func_name,data_type='training',num_traj=args.num_traj)
-        generate_data(t=t,y0=y0,func=func,func_name=func_name,data_type='validation',num_traj=int(args.num_traj*0.2))
-        generate_data(t=t,y0=y0,func=func,func_name=func_name,data_type='testing',num_traj=int(args.num_traj*0.2))
-    
-    # Generate data based on model 2
-    else:
-        generate_data(t=t,y0=y0,func=func,func_name=func_name,data_type=None,num_traj=args.num_traj)
+    # Generate data
+    generate_data(func, args.domain)

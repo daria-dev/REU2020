@@ -116,6 +116,8 @@ def plot_loss(train_loss, val_loss, epoch_list, dir_name):
     plt.show()
     plt.close()
 
+# TODO: Add helper function to find network derivative at domain points
+
 def train_nn(train_y,val_y,net,criterion,optimizer,args):
     '''
     NOTES: Trains neural network and checks against validation data, and saves network state_dict. 
@@ -165,6 +167,9 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
             def closure():
                 optimizer.zero_grad()
                 loss = criterion(net(train_y_batch), train_y1_batch)
+
+                # TODO: add difference between known Jacobian and derivative of
+                #       neural net to loss
 
                 # add regularization if necessary
                 if args.Reg == 'L2':
