@@ -1,6 +1,7 @@
 import argparse, json
 import torch.nn as nn
 import numpy as np
+from numpy import linalg as LA
 
 from model_aux import *
 from test_aux import test_loss
@@ -12,14 +13,14 @@ parser.add_argument('--nn_depth', type=int, default=1,
     help='number of hidden layers')
 parser.add_argument('--batch_size', type=int, default=32,
     help='number of')
-parser.add_argument('--num_epoch', type=int, default=1000,
+parser.add_argument('--num_epoch', type=int, default=500,
     help='number of training epochs')
 parser.add_argument('--lr', type=float, default=0.01,
     help='learning rate')
-parser.add_argument('--Reg', type=str, default='none',
-    help='reguarization argument')
+parser.add_argument('--Reg', type=str, default=None,
+    help='regularization argument')
 parser.add_argument('--Lambda', type=float, default=0.01,
-    help='reguarization weight')
+    help='regularization weight')
 parser.add_argument('--data_dir', type=str, default='data',
     help='name for data directory')
 parser.add_argument('--log_dir', type=str, default='results',
@@ -102,7 +103,7 @@ if __name__ == "__main__":
     train_nn(train_y,val_y,net,criterion,optimizer,args)
     net.load_state_dict(torch.load(args.log_dir+'/net_state_dict.pt'), strict=False)
 
-    # toggle comments for next two functions to either calculate loss with MSE or Relative Loss
+    # toggle comments for next two functions to either calculate loss with MSE or Relative Error
 
     #MSE
     #def crit(y, y_):
@@ -110,6 +111,6 @@ if __name__ == "__main__":
     
     #Relative Loss
     def crit(y, y_):
-        return np.mean(abs((y_ - y)/y))
+        return LA.norm(np.array([(y_ - y).flatten()]),'fro')/LA.norm(np.array([y.flatten()]),'fro')
 
     print('test loss:', test_loss(net, crit, test_y))

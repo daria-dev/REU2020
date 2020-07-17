@@ -18,7 +18,7 @@ parser.add_argument('--num_traj', type=int, default=100,
 parser.add_argument('--data_dir', type=str, default='data',
         help='name for data directory')
 
-parser.add_argument('--ODE_system', type=str, default='Lorenz',
+parser.add_argument('--ODE_system', type=str, default='Hopf',
     help='ODE System used to generate data e.g. Spiral, Lorenz, Hopf, Glycolytic')
 parser.add_argument('--split_method', type=int, default=2,
     help='method to split data into train/val/test, either 1 or 2')
@@ -63,7 +63,6 @@ def spiral(t, y):
 # Lorenz ODE
 def lorenz(t, y): 
     assert ((len(y.shape) == 1) or (len(y.shape) == 3)),'y must be a 1D or 3D array.'
-
     if len(y.shape) == 1:
         v = np.array([10*(y[1]-y[0]), y[0]*(28-y[2])-y[1], y[0]*y[1]-8/3.*y[2]])
     else:
