@@ -258,7 +258,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                         Lambda = torch.tensor(args.Lambda)
                         for n,w in net.named_parameters():
                             if (n != "f.priorLayer.weight"):
-                                l2 += w.norm()
+                                l2 += w.norm()**2
                         loss += l2*Lambda
 
                 if args.Reg == 'L1':
@@ -266,7 +266,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                         Lambda = torch.tensor(args.Lambda)
                         for n,w in net.named_parameters():
                             if (n != "f.priorLayer.weight"):
-                                l1 += w.norm(1)
+                                l1 += w.norm(1)**2
                         loss += l1*Lambda
 
                 loss.backward()

@@ -171,14 +171,14 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                         l2 = torch.tensor(0.0)
                         Lambda = torch.tensor(args.Lambda)
                         for w in net.parameters():
-                                l2 += w.norm()
+                                l2 += w.norm()**2
                         loss += l2*Lambda
 
                 if args.Reg == 'L1':
                         l1 = torch.tensor(0.0)
                         Lambda = torch.tensor(args.Lambda)
                         for w in net.parameters():
-                                l1 += w.norm(1)
+                                l1 += w.norm(1)**2
                         loss += l1*Lambda
 
                 loss.backward()
