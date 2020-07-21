@@ -1,0 +1,14 @@
+{
+  "hidden_dim": 32,
+  "nn_depth": 1,
+  "batch_size": 32,
+  "num_epoch": 1000,
+  "lr": 0.01,
+  "Reg": "none",
+  "Lambda": 0.01,
+  "data_dir": "data",
+  "log_dir": "results",
+  "dt": 0.00998,
+  "jacobian_lambda": 0.01,
+  "symbolic_reg": false
+}
