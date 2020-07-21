@@ -224,4 +224,4 @@ def generate_jacobian(y,func,num_boundary_points):
     elif func == 'Lorenz':
         jacobian = lorenz(D)
     
-    return jacobian
+    return jacobian, D

@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
 from jacobian import *
-from jacobian_util import *
 
 def make_directory(dir_name):
     '''
@@ -161,6 +160,15 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
 
     # run training
     current_step = 0
+    
+    #calculate jacobian on a boundary  wall
+    y = np.vstack((train_y,val_y[:,1:-1,:]))
+    num_traj = y.shape[0]
+    num_point = y.shape[1]
+    num_J_points = math.floor(0.1*num_traj*num_point)  # num points to calculate Jacobian on <= 0.1*num_traj*num_point
+    J,D = generate_jacobian(y,'Lorenz',num_J_points)
+    # y = np.reshape(y, (y.shape[0]*y.shape[1], y.shape[2]))
+    
     for epoch in range(args.num_epoch):
         for i, (train_y_batch, train_y1_batch) in enumerate(train_loader):
             current_step += 1
@@ -169,19 +177,11 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                 loss = criterion(net(train_y_batch), train_y1_batch)
 
                 # jacboian loss
-                y = np.vstack((train_y,val_y[:,1:-1,:]))
-                num_traj = y.shape[0]
-                num_traj = 100 # temporary fix
-                num_point = y.shape[1]
-                num_J_points = math.floor(0.1*num_traj*num_point) # num points to calculate Jacobian on <= 0.1*num_traj*num_point
-                J = generate_jacobian(y,'Lorenz',num_J_points)
-                y = np.reshape(y, (y.shape[0]*y.shape[1], y.shape[2]))
-            
                 jacobian_loss = torch.tensor(0.0)
                 weight = torch.tensor(args.jacobian_lambda) #lambda
                 for m in range(num_J_points): # boundary wall
                     jacobian_loss += (torch.tensor(J[m,:,:], dtype=torch.float32) 
-                            - jacobian(net.f, torch.tensor(y[m,:], dtype=torch.float32))).norm()**2
+                            - jacobian(net.f, torch.tensor(D[m,:], dtype=torch.float32))).norm()**2
                 loss += weight*jacobian_loss
                 
                 # add regularization if necessary
