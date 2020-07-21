@@ -1,0 +1,13 @@
+{
+  "T0": 0,
+  "Tend": 5,
+  "Delta": 2,
+  "num_point": 502,
+  "num_traj": 100,
+  "data_dir": "data",
+  "ODE_system": "Lorenz",
+  "split_method": 2,
+  "T_ss": 250,
+  "V_ss": 75,
+  "noise": null
+}
