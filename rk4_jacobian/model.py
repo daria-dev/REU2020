@@ -1,6 +1,7 @@
 import argparse, json
 import torch.nn as nn
 import numpy as np
+from numpy import linalg as LA
 
 from model_aux import *
 from test_aux import test_loss
@@ -113,6 +114,6 @@ if __name__ == "__main__":
     
     #Relative Loss
     def crit(y, y_):
-        return np.mean(abs((y_ - y)/y))
+        return LA.norm(np.array([(y_ - y).flatten()]),'fro')/LA.norm(np.array([y.flatten()]),'fro')
 
     print('test loss:', test_loss(net, crit, test_y))
