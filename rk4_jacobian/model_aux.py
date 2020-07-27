@@ -8,10 +8,8 @@ from jacobian import *
 def make_directory(dir_name):
     '''
     NOTES: Makes directory (if it doesn't already exist).
-
     INPUT: 
         dir_name = string; name of directory
-
     OUTPUT:
         None
     '''
@@ -23,7 +21,6 @@ def make_directory(dir_name):
 def plot_3D(data,func_name,dir_name,data_type):
     '''
     NOTES: Plots 3D data and saves plot as png.
-
     INPUT:
         data = data position points; 3D array with axes
                 - 0 = ith trajectory
@@ -32,7 +29,6 @@ def plot_3D(data,func_name,dir_name,data_type):
         func_name = string with name of ODE
         dir_name = str; name of directory to save plot
         data_type = string with label for data (e.g. training, validation, testing)
-
     OUTPUT:
         None
     '''
@@ -61,14 +57,12 @@ def plot_3D(data,func_name,dir_name,data_type):
 def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
     '''
     NOTES: Structure for nice printing of train/validation loss for given epoch.
-
     INPUT: 
         epoch = int; current epoch number
         num_epoch = int; total number of epochs that will be executed
         loss_train = float; error for training data
         loss_val = float; error for validation data
         overwrite = bool; choice to overwrite printed line
-
     OUTPUT:
         None
     '''
@@ -89,13 +83,11 @@ def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
 def plot_loss(train_loss, val_loss, epoch_list, dir_name):
     '''
     NOTES: Plots 2D data and saves plot as png.
-
     INPUT:
         epoch_list = list of epochs in which loss data collected
         train_loss = list of train losses
         val_loss = list of val losses
         dir_name = str; name of directory to save plot
-
     OUTPUT:
         None
     '''
@@ -117,6 +109,34 @@ def plot_loss(train_loss, val_loss, epoch_list, dir_name):
     plt.show()
     plt.close()
 
+def plot_jacobian_loss(train_loss, epoch_list, dir_name):
+    '''
+    NOTES: Plots 2D data and saves plot as png.
+
+    INPUT:
+        epoch_list = list of epochs in which loss data collected
+        train_loss = list of train losses
+        dir_name = str; name of directory to save plot
+
+    OUTPUT:
+        None
+    '''
+    assert (type(dir_name) == str),'dir_name must be string.'
+    print(len(train_loss),len(epoch_list))
+    assert (len(train_loss) == len(epoch_list)),'same number of datapoints'
+    
+    plt.close()
+    fig = plt.figure()
+    plt.plot(epoch_list, train_loss, label = 'Train')
+    fig.suptitle('Jacobian Loss vs Epochs')
+    plt.xlabel('Epochs')
+    plt.ylabel('Jacobian Loss')
+    plt.legend(loc="upper left")
+    plt.yscale('log')
+    plt.savefig(dir_name+'/'+ 'Jacobian_Loss.png')
+    plt.show()
+    plt.close()
+
 def train_nn(train_y,val_y,net,criterion,optimizer,args):
     '''
     NOTES: Trains neural network and checks against validation data, and saves network state_dict. 
@@ -124,7 +144,6 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                 - 0 = ith trajectory/sample
                 - 1 = point at time t_i
                 - 2 = spatial dimension y_i
-
     INPUT: 
         train_y = 3D array; training data input
         train_v = 3D array; training data output
@@ -134,7 +153,6 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
         criterion = loss function
         optimizer = optimization algorithm
         args = user input/parameters
-
     OUTPUT:
         None
     '''
@@ -156,7 +174,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
         dataset=train_dataset, batch_size=args.batch_size, shuffle=True)
     
     # holds loss data
-    train_list,val_list,epoch_list = [],[],[]
+    train_list,val_list,epoch_list,jacobian_list = [],[],[],[]
 
     # run training
     current_step = 0
@@ -165,7 +183,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     y = np.vstack((train_y,val_y[:,1:-1,:]))
     num_traj = y.shape[0]
     num_point = y.shape[1]
-    num_J_points = math.floor(0.1*num_traj*num_point)  # num points to calculate Jacobian on <= 0.1*num_traj*num_point
+    num_J_points = math.floor(0.01*num_traj*num_point)  # num points to calculate Jacobian on <= 0.1*num_traj*num_point
     J,D = generate_jacobian(y,'Lorenz',num_J_points)
     # y = np.reshape(y, (y.shape[0]*y.shape[1], y.shape[2]))
     
@@ -181,8 +199,9 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                 weight = torch.tensor(args.jacobian_lambda) #lambda
                 for m in range(num_J_points): # boundary wall
                     jacobian_loss += (torch.tensor(J[m,:,:], dtype=torch.float32) 
-                            - jacobian(net.f, torch.tensor(D[m,:], dtype=torch.float32))).norm()**2
+                            - torch.autograd.functional.jacobian(net.f, torch.tensor(D[m,:], dtype=torch.float32))).norm()**2
                 loss += weight*jacobian_loss
+                jacobian_list.append(jacobian_loss)
                 
                 # add regularization if necessary
                 if args.Reg == 'L2':
@@ -221,3 +240,4 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     torch.save(net.state_dict(),args.log_dir+'/net_state_dict.pt')
 
     plot_loss(train_list, val_list, epoch_list, args.data_dir)
+    plot_jacobian_loss(jacobian_list, [i for i in range(len(train_loader)*args.num_epoch)], args.data_dir)
