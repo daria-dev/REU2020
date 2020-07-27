@@ -13,7 +13,7 @@ parser.add_argument('--nn_depth', type=int, default=1,
     help='number of hidden layers')
 parser.add_argument('--batch_size', type=int, default=32,
     help='number of')
-parser.add_argument('--num_epoch', type=int, default=1000,
+parser.add_argument('--num_epoch', type=int, default=4000,
     help='number of training epochs')
 parser.add_argument('--lr', type=float, default=0.01,
     help='learning rate')

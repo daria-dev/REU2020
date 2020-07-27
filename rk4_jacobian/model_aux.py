@@ -122,14 +122,13 @@ def plot_jacobian_loss(train_loss, epoch_list, dir_name):
         None
     '''
     assert (type(dir_name) == str),'dir_name must be string.'
-    print(len(train_loss),len(epoch_list))
     assert (len(train_loss) == len(epoch_list)),'same number of datapoints'
     
     plt.close()
     fig = plt.figure()
     plt.plot(epoch_list, train_loss, label = 'Train')
-    fig.suptitle('Jacobian Loss vs Epochs')
-    plt.xlabel('Epochs')
+    fig.suptitle('Jacobian Loss vs Batches')
+    plt.xlabel('Batches')
     plt.ylabel('Jacobian Loss')
     plt.legend(loc="upper left")
     plt.yscale('log')
@@ -183,7 +182,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     y = np.vstack((train_y,val_y[:,1:-1,:]))
     num_traj = y.shape[0]
     num_point = y.shape[1]
-    num_J_points = math.floor(0.01*num_traj*num_point)  # num points to calculate Jacobian on <= 0.1*num_traj*num_point
+    num_J_points = math.floor(0.002*num_traj*num_point)  # num points to calculate Jacobian on <= 0.1*num_traj*num_point
     J,D = generate_jacobian(y,'Lorenz',num_J_points)
     # y = np.reshape(y, (y.shape[0]*y.shape[1], y.shape[2]))
     
@@ -194,7 +193,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                 optimizer.zero_grad()
                 loss = criterion(net(train_y_batch), train_y1_batch)
 
-                # jacboian loss
+                # jacobian loss
                 jacobian_loss = torch.tensor(0.0)
                 weight = torch.tensor(args.jacobian_lambda) #lambda
                 for m in range(num_J_points): # boundary wall
