@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import solve_ivp
 from jacobian import *
+from functional import *
 
 def make_directory(dir_name):
     '''
@@ -54,7 +55,7 @@ def plot_3D(data,func_name,dir_name,data_type):
     plt.show()
     plt.close()
 
-def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
+def print_epoch(epoch,num_epoch,loss_train,loss_val,loss_jacobian,overwrite):
     '''
     NOTES: Structure for nice printing of train/validation loss for given epoch.
     INPUT: 
@@ -70,11 +71,13 @@ def print_epoch(epoch,num_epoch,loss_train,loss_val,overwrite):
     assert (type(num_epoch) == int),'num_epoch must be int.'
     assert (type(loss_train) == float),'loss_train must be float.'
     assert (type(loss_val) == float),'loss_val must be float.'
+    assert (type(loss_jacobian) == float),'loss_val must be float.'
     assert (type(overwrite) == bool),'overwrite must be bool.'
 
     line = 'Epoch {}/{}'.format(epoch+1, num_epoch)
     line += ' | ' + 'Train Loss: {:.8f}'.format(loss_train)
     line += ' | ' + 'Validation Loss: {:.8f}'.format(loss_val)
+    line += ' | ' + 'Jacobian Loss: {:.8f}'.format(loss_jacobian)
     if overwrite:
         print(line, end='\r')
     else:
@@ -182,10 +185,10 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
     y = np.vstack((train_y,val_y[:,1:-1,:]))
     num_traj = y.shape[0]
     num_point = y.shape[1]
-    num_J_points = math.floor(0.002*num_traj*num_point)  # num points to calculate Jacobian on <= 0.1*num_traj*num_point
+    num_J_points = math.floor(0.005*num_traj*num_point)  # num points to calculate Jacobian on <= 0.1*num_traj*num_point
     J,D = generate_jacobian(y,'Lorenz',num_J_points)
     # y = np.reshape(y, (y.shape[0]*y.shape[1], y.shape[2]))
-    
+
     for epoch in range(args.num_epoch):
         for i, (train_y_batch, train_y1_batch) in enumerate(train_loader):
             current_step += 1
@@ -197,8 +200,9 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                 jacobian_loss = torch.tensor(0.0)
                 weight = torch.tensor(args.jacobian_lambda) #lambda
                 for m in range(num_J_points): # boundary wall
-                    jacobian_loss += (torch.tensor(J[m,:,:], dtype=torch.float32) 
-                            - torch.autograd.functional.jacobian(net.f, torch.tensor(D[m,:], dtype=torch.float32))).norm()**2
+                    jacobian_loss += (torch.tensor(J[m,:,:], dtype=torch.float32)
+                            - jacobian(net.f, torch.tensor(D[m,:], dtype=torch.float32))).norm()**2
+                jacobian_loss /= num_J_points
                 loss += weight*jacobian_loss
                 jacobian_list.append(jacobian_loss)
                 
@@ -231,7 +235,7 @@ def train_nn(train_y,val_y,net,criterion,optimizer,args):
                 val_list.append(loss_val)
                 epoch_list.append(epoch + 1)
 
-            print_epoch(epoch, args.num_epoch, loss_train.item(), loss_val.item(), overwrite=False) # print at each batch
+            print_epoch(epoch, args.num_epoch, loss_train.item(), loss_val.item(), jacobian_list[-1].item(), overwrite=False) # print at each batch
 
     end = time.time()
     print('\n=====> Running time: {}'.format(end-start))

@@ -3,7 +3,8 @@ import torch.nn as nn
 import numpy as np
 from numpy import linalg as LA
 
-from model_aux import *
+from model_aux_batches import *
+# from model_aux import *
 from test_aux import test_loss
 
 parser = argparse.ArgumentParser('MODEL')
@@ -27,7 +28,7 @@ parser.add_argument('--log_dir', type=str, default='results',
     help='name for directory in which to save results')
 parser.add_argument('--dt', type=float, default=0.00998,
     help='time step for RK4')
-parser.add_argument('--jacobian_lambda', type=float, default=0.01,
+parser.add_argument('--jacobian_lambda', type=float, default=1e-5,
     help='jacobian reguarization weight')
 args = parser.parse_args()
 
