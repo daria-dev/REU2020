@@ -266,4 +266,4 @@ def train_nn(train_y, val_y, net, criterion, optimizer, args):
     torch.save(net.state_dict(), args.log_dir + '/net_state_dict.pt')
 
     plot_loss(train_list, val_list, epoch_list, args.data_dir)
-    plot_jacobian_loss(jacobian_list, [i for i in range(len(jacobian_list))], args.data_dir)
+    plot_jacobian_loss(jacobian_list, epoch_list, args.data_dir)
