@@ -17,7 +17,6 @@ parser.add_argument('--num_traj', type=int, default=100,
     help='number of training trajectories')
 parser.add_argument('--data_dir', type=str, default='data',
         help='name for data directory')
-
 parser.add_argument('--ODE_system', type=str, default='Lorenz',
     help='ODE System used to generate data e.g. Spiral, Lorenz, Hopf, Glycolytic')
 parser.add_argument('--split_method', type=int, default=2,
@@ -130,6 +129,41 @@ def glycolytic_oscillator(t, y):
                      (A - y[:, :, 5]) - k5 * y[:, :, 5]
         v[:, :, 6] = psi * kappa * (y[:, :, 3] - y[:, :, 6]) - k * y[:, :, 6]
 
+    return v
+
+# code taken from https://en.wikipedia.org/wiki/Lorenz_96_model
+
+def lorenz96(t, y):
+    """Lorenz 96 model."""
+    N = 10  # Number of variables
+    F = 8  # Forcing
+
+    if (len(y.shape) == 1):
+        # Compute state derivatives
+        v = np.zeros(N)
+        # First the 3 edge cases: i=1,2,N
+        v[0] = (y[1] - y[N-2]) * y[N-1] - y[0]
+        v[1] = (y[2] - y[N-1]) * y[0] - y[1]
+        v[N-1] = (y[0] - y[N-3]) * y[N-2] - y[N-1]
+        # Then the general case
+        for i in range(2, N-1):
+            v[i] = (y[i+1] - y[i-2]) * y[i-1] - y[i]
+        # Add the forcing term
+        v = v + F
+    else:
+        v = np.zeros(y.shape)
+        # First the 3 edge cases: i=1,2,N
+        v[:,:,0] = (y[:,:,1] - y[:,:,N-2]) * y[:,:,N-1] - y[:,:,0]
+        v[:,:,1] = (y[:,:,2] - y[:,:,N-1]) * y[:,:,0] - y[:,:,1]
+        v[:,:,N-1] = (y[:,:,0] - y[:,:,N-3]) * y[:,:,N-2] - y[:,:,N-1]
+        # Then the general case
+        for i in range(2, N-1):
+            v[:,:,i] = (y[:,:,i+1] - y[:,:,i-2]) * y[:,:,i-1] - y[:,:,i]
+        # Add the forcing term
+        v = v + F
+        
+
+    # Return the state derivatives
     return v
 
 def initial(y0):
@@ -260,6 +294,9 @@ if __name__ == "__main__":
         func = glycolytic_oscillator
         y0 = None # dummy variable 
                   # does not take in y0, samples random y0 instead
+    elif func_name == 'Lorenz_96':
+        func = lorenz96
+        y0 = 8*np.ones(10) # equilibrium point
         
     ''' Save parameters for reference. '''
     # save args

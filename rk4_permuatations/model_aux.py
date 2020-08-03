@@ -9,31 +9,24 @@ from mpl_toolkits.mplot3d import Axes3D
 ## Helper function for getting velocity ##
 ##########################################
 
+#
+# permutation matrix for lorenz 96 with N = 36
+# shifts by one element to the left, i.e
+#   [a b c d] * P = [b c d a]
+#
+
+N = 10
+P = torch.zeros(N, N)
+for n in range(N-1):
+    P[n+1,n] = 1
+
+P[0, N-1] = 1
+
 # switches nth and 0th elements of x
 # assumes x either 1d, 2d, or 3d
 def permute(x, n):
-    if (len(x.shape) == 1):
-        # makes autograd work
-        x_p = x.clone().detach()
-        tmp = x[n]
-
-        x_p[n] = x[0]
-        x_p[0] = tmp
-
-    elif (len(x.shape) == 2):
-        # makes autograd work
-        x_p = x.clone().detach()
-        tmp = x[:,n]
-
-        x_p[:,n] = x[:,0]
-        x_p[:,0] = tmp
-    else:
-        # makes autograd work
-        x_p = x.clone().detach()
-        tmp = x[:,:,n]
-
-        x_p[:,:,n] = x[:,:,0]
-        x_p[:,:,0] = tmp
+    with torch.no_grad():
+        x_p = x @ P
 
     return x_p
 
@@ -44,25 +37,46 @@ def get_velocity(g, x):
     if (len(x.shape) == 1):
         N = x.shape[0]
         y = torch.zeros(x.shape[0])
+        x_tmp = x
 
-        for n in range(N):
-            v = g(permute(x, n))
+        # dont permute first coordinate
+        y[0] = g(x)
+
+        for n in range(1, N):
+            x_tmp = permute(x, n)
+            v = g(x_tmp)
+            x = x_tmp
+
             y[n] = v
     
     elif (len(x.shape) == 2):
         N = x.shape[1]
         y = torch.zeros(x.shape[0], x.shape[1])
+        x_tmp = x
+
+        # dont permute first coordinate
+        y[:,0] = g(x)[:,0]
 
         for n in range(N):
-            v = g(permute(x, n))
+            x_tmp = permute(x, n)
+            v = g(x_tmp)
+            x = x_tmp
+
             y[:,n] = v[:,0]
 
     else:
         N = x.shape[2]
         y = torch.zeros(x.shape[0], x.shape[1], x.shape[2])
+        x_tmp = x
+
+        # dont permute first coordinate
+        y[:,:,0] = g(x)[:,0,:]
 
         for n in range(N):
-            v = g(permute(x, n))
+            x_tmp = permute(x, n)
+            v = g(x_tmp)
+            x = x_tmp
+
             y[:,:,n] = v[:,0,:]
 
     return y
