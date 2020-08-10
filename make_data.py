@@ -241,13 +241,14 @@ def generate_data(t,y0,func,func_name,data_type,num_traj):
     
     # add noise
     if args.noise != None:
-        tot_num_traj = data_y.shape[0]
-        for traj in range(tot_num_traj):
-            y_vals = data_y[traj,:,2]
-            noiseSigma = args.noise * y_vals;
-            mu,sigma = 0,1
-            noise  = noiseSigma*np.random.normal(mu, sigma, args.num_point)
-            data_y[traj,:,2] += noise
+        x_vals = data_y[:,:,0]
+        y_vals = data_y[:,:,1]
+        z_vals = data_y[:,:,2]
+        inf_norm = max(np.amax(abs(x_vals)),np.amax(abs(y_vals)),np.amax(abs(z_vals)))
+        noiseSigma = args.noise * inf_norm;
+        mu,sigma = 0,1
+        noise  = noiseSigma*np.random.normal(mu, sigma, (args.num_traj, args.num_point, 3))
+        data_y[:,:,:] += noise
     
     # save data for model 1
     if args.split_method == 1: 
